@@ -1,0 +1,10 @@
+{
+  "version": 2,
+  "dgSpecHash": "8wc5AGA4HeI=",
+  "success": true,
+  "projectFilePath": "C:\\Users\\tobad\\Documents\\c#\\Win11SysDash\\Win11SysDash.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\tobad\\.nuget\\packages\\system.management\\10.0.12\\system.management.10.0.12.nupkg.sha512"
+  ],
+  "logs": []
+}

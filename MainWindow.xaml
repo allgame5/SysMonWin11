@@ -1,0 +1,357 @@
+﻿<Window x:Class="Win11SysDash.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Windows Task Manager" Height="580" Width="480"
+        Background="#D4D0C8" FontFamily="Tahoma" FontSize="11"
+        ResizeMode="CanResizeWithGrip" WindowStartupLocation="CenterScreen">
+
+    <Window.Resources>
+        <Style x:Key="XpGroupBox" TargetType="GroupBox">
+            <Setter Property="BorderBrush" Value="#808080"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding" Value="4"/>
+            <Setter Property="Margin" Value="2"/>
+            <Setter Property="HeaderTemplate">
+                <Setter.Value>
+                    <DataTemplate>
+                        <TextBlock Text="{Binding}" Foreground="#000080" FontSize="11" Margin="2,0"/>
+                    </DataTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style TargetType="Button">
+            <Setter Property="FontFamily" Value="Tahoma"/>
+            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="Height" Value="23"/>
+            <Setter Property="Padding" Value="8,1"/>
+            <Setter Property="Margin" Value="3,0"/>
+        </Style>
+    </Window.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="22"/>
+        </Grid.RowDefinitions>
+
+        <!-- MENU BAR -->
+        <Menu Grid.Row="0" Background="#D4D0C8" Margin="2,2,2,0">
+            <MenuItem Header="_File">
+                <MenuItem Header="_New Task (Run...)" Click="NewTask_Click"/>
+                <Separator/>
+                <MenuItem Header="E_xit Task Manager" Click="Exit_Click"/>
+            </MenuItem>
+            <MenuItem Header="_Options">
+                <MenuItem Header="_Always On Top" IsCheckable="True" x:Name="MenuAlwaysOnTop" Click="MenuAlwaysOnTop_Click"/>
+            </MenuItem>
+            <MenuItem Header="_View">
+                <MenuItem Header="_Refresh Now" Click="RefreshNow_Click"/>
+            </MenuItem>
+            <MenuItem Header="_Shut Down">
+                <MenuItem Header="_Turn Off" Click="Shutdown_Click"/>
+                <MenuItem Header="_Restart" Click="Restart_Click"/>
+            </MenuItem>
+        </Menu>
+
+        <!-- MAIN TAB CONTROL -->
+        <TabControl Grid.Row="1" Background="#D4D0C8" Margin="4,2,4,2">
+            
+            <!-- TAB 1: APPLICATIONS -->
+            <TabItem Header="Applications">
+                <Grid Margin="4">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="35"/>
+                    </Grid.RowDefinitions>
+
+                    <ListView x:Name="AppsListView" Grid.Row="0" BorderBrush="#808080">
+                        <ListView.View>
+                            <GridView>
+                                <GridViewColumn Header="Task" Width="280" DisplayMemberBinding="{Binding Title}"/>
+                                <GridViewColumn Header="Status" Width="100" DisplayMemberBinding="{Binding Status}"/>
+                            </GridView>
+                        </ListView.View>
+                    </ListView>
+
+                    <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                        <Button Content="End Task" Click="EndAppTask_Click"/>
+                        <Button Content="Switch To" Click="SwitchToApp_Click"/>
+                        <Button Content="New Task..." Click="NewTask_Click"/>
+                    </StackPanel>
+                </Grid>
+            </TabItem>
+
+            <!-- TAB 2: PROCESSES -->
+            <TabItem Header="Processes" IsSelected="True">
+                <Grid Margin="4">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="35"/>
+                    </Grid.RowDefinitions>
+
+                    <ListView x:Name="ProcessesListView" Grid.Row="0" BorderBrush="#808080">
+                        <ListView.ContextMenu>
+                            <ContextMenu>
+                                <MenuItem Header="End Process" Click="ContextMenu_EndProcess"/>
+                                <MenuItem Header="End Process Tree" Click="ContextMenu_EndProcessTree"/>
+                                <Separator/>
+                                <MenuItem Header="Set Priority">
+                                    <MenuItem Header="Realtime" Click="SetPriority_Realtime"/>
+                                    <MenuItem Header="High" Click="SetPriority_High"/>
+                                    <MenuItem Header="Above Normal" Click="SetPriority_AboveNormal"/>
+                                    <MenuItem Header="Normal" Click="SetPriority_Normal"/>
+                                    <MenuItem Header="Below Normal" Click="SetPriority_BelowNormal"/>
+                                    <MenuItem Header="Low" Click="SetPriority_Low"/>
+                                </MenuItem>
+                                <Separator/>
+                                <MenuItem Header="Open File Location" Click="ContextMenu_OpenLocation"/>
+                            </ContextMenu>
+                        </ListView.ContextMenu>
+                        <ListView.View>
+                            <GridView>
+                                <GridViewColumn Header="Image Name" Width="150" DisplayMemberBinding="{Binding Name}"/>
+                                <GridViewColumn Header="PID" Width="55" DisplayMemberBinding="{Binding Id}"/>
+                                <GridViewColumn Header="CPU" Width="45" DisplayMemberBinding="{Binding CpuText}"/>
+                                <GridViewColumn Header="Mem Usage" Width="100" DisplayMemberBinding="{Binding MemText}"/>
+                            </GridView>
+                        </ListView.View>
+                    </ListView>
+
+                    <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                        <Button Content="End Process" Click="EndProcess_Click"/>
+                    </StackPanel>
+                </Grid>
+            </TabItem>
+
+            <!-- TAB 3: PERFORMANCE -->
+            <TabItem Header="Performance">
+                <Grid Background="#D4D0C8" Margin="4">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="140"/>
+                        <RowDefinition Height="110"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- CPU USAGE & HISTORY -->
+                    <Grid Grid.Row="0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="100"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <GroupBox Grid.Column="0" Header="CPU Usage" Style="{StaticResource XpGroupBox}">
+                            <Border Background="Black" BorderBrush="#808080" BorderThickness="1">
+                                <Grid>
+                                    <Canvas x:Name="CpuMeterCanvas" Background="Black" VerticalAlignment="Stretch" Margin="4,4,4,18"/>
+                                    <TextBlock x:Name="CpuPercentText" Text="0 %" Foreground="#00FF00" FontFamily="Consolas" FontSize="11" HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,0,2"/>
+                                </Grid>
+                            </Border>
+                        </GroupBox>
+
+                        <GroupBox Grid.Column="1" Header="CPU Usage History" Style="{StaticResource XpGroupBox}">
+                            <Border Background="Black" BorderBrush="#808080" BorderThickness="1">
+                                <ItemsControl x:Name="CpuHistoryItemsControl">
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <UniformGrid Rows="1"/>
+                                        </ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Border BorderBrush="#004000" BorderThickness="0,0,1,0">
+                                                <Canvas x:Name="GraphCanvas" Loaded="CpuGraphCanvas_Loaded" Background="Black"/>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </Border>
+                        </GroupBox>
+                    </Grid>
+
+                    <!-- PF USAGE & HISTORY -->
+                    <Grid Grid.Row="1" Margin="0,2,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="100"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <GroupBox Grid.Column="0" Header="PF Usage" Style="{StaticResource XpGroupBox}">
+                            <Border Background="Black" BorderBrush="#808080" BorderThickness="1">
+                                <Grid>
+                                    <Canvas x:Name="PfMeterCanvas" Background="Black" VerticalAlignment="Stretch" Margin="4,4,4,18"/>
+                                    <TextBlock x:Name="PfValueText" Text="0 MB" Foreground="#00FF00" FontFamily="Consolas" FontSize="10" HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,0,2"/>
+                                </Grid>
+                            </Border>
+                        </GroupBox>
+
+                        <GroupBox Grid.Column="1" Header="Page File Usage History" Style="{StaticResource XpGroupBox}">
+                            <Border Background="Black" BorderBrush="#808080" BorderThickness="1">
+                                <Canvas x:Name="PfGraphCanvas" Background="Black"/>
+                            </Border>
+                        </GroupBox>
+                    </Grid>
+
+                    <!-- STATS GRID -->
+                    <Grid Grid.Row="2" Margin="0,2,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="*"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+
+                        <GroupBox Grid.Row="0" Grid.Column="0" Header="Totals" Style="{StaticResource XpGroupBox}">
+                            <Grid Margin="2,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="70"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+                                <TextBlock Grid.Row="0" Grid.Column="0" Text="Handles"/>
+                                <TextBlock x:Name="TxtHandles" Grid.Row="0" Grid.Column="1" Text="0" HorizontalAlignment="Right"/>
+                                <TextBlock Grid.Row="1" Grid.Column="0" Text="Threads"/>
+                                <TextBlock x:Name="TxtThreads" Grid.Row="1" Grid.Column="1" Text="0" HorizontalAlignment="Right"/>
+                                <TextBlock Grid.Row="2" Grid.Column="0" Text="Processes"/>
+                                <TextBlock x:Name="TxtProcesses" Grid.Row="2" Grid.Column="1" Text="0" HorizontalAlignment="Right"/>
+                            </Grid>
+                        </GroupBox>
+
+                        <GroupBox Grid.Row="0" Grid.Column="1" Header="Physical Memory (K)" Style="{StaticResource XpGroupBox}">
+                            <Grid Margin="2,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="80"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+                                <TextBlock Grid.Row="0" Grid.Column="0" Text="Total"/>
+                                <TextBlock x:Name="TxtPhysTotal" Grid.Row="0" Grid.Column="1" Text="0" HorizontalAlignment="Right"/>
+                                <TextBlock Grid.Row="1" Grid.Column="0" Text="Available"/>
+                                <TextBlock x:Name="TxtPhysAvail" Grid.Row="1" Grid.Column="1" Text="0" HorizontalAlignment="Right"/>
+                                <TextBlock Grid.Row="2" Grid.Column="0" Text="System Cache"/>
+                                <TextBlock x:Name="TxtPhysCache" Grid.Row="2" Grid.Column="1" Text="0" HorizontalAlignment="Right"/>
+                            </Grid>
+                        </GroupBox>
+
+                        <GroupBox Grid.Row="1" Grid.Column="0" Header="Commit Charge (K)" Style="{StaticResource XpGroupBox}">
+                            <Grid Margin="2,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="70"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+                                <TextBlock Grid.Row="0" Grid.Column="0" Text="Total"/>
+                                <TextBlock x:Name="TxtCommitTotal" Grid.Row="0" Grid.Column="1" Text="0" HorizontalAlignment="Right"/>
+                                <TextBlock Grid.Row="1" Grid.Column="0" Text="Limit"/>
+                                <TextBlock x:Name="TxtCommitLimit" Grid.Row="1" Grid.Column="1" Text="0" HorizontalAlignment="Right"/>
+                                <TextBlock Grid.Row="2" Grid.Column="0" Text="Peak"/>
+                                <TextBlock x:Name="TxtCommitPeak" Grid.Row="2" Grid.Column="1" Text="0" HorizontalAlignment="Right"/>
+                            </Grid>
+                        </GroupBox>
+
+                        <GroupBox Grid.Row="1" Grid.Column="1" Header="Kernel Memory (K)" Style="{StaticResource XpGroupBox}">
+                            <Grid Margin="2,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="80"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+                                <TextBlock Grid.Row="0" Grid.Column="0" Text="Total"/>
+                                <TextBlock x:Name="TxtKernelTotal" Grid.Row="0" Grid.Column="1" Text="0" HorizontalAlignment="Right"/>
+                                <TextBlock Grid.Row="1" Grid.Column="0" Text="Paged"/>
+                                <TextBlock x:Name="TxtKernelPaged" Grid.Row="1" Grid.Column="1" Text="0" HorizontalAlignment="Right"/>
+                                <TextBlock Grid.Row="2" Grid.Column="0" Text="Nonpaged"/>
+                                <TextBlock x:Name="TxtKernelNonPaged" Grid.Row="2" Grid.Column="1" Text="0" HorizontalAlignment="Right"/>
+                            </Grid>
+                        </GroupBox>
+                    </Grid>
+                </Grid>
+            </TabItem>
+
+            <!-- TAB 4: NETWORKING -->
+            <TabItem Header="Networking">
+                <Grid Margin="4">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="120"/>
+                    </Grid.RowDefinitions>
+
+                    <GroupBox Grid.Row="0" Header="Network Adapter History" Style="{StaticResource XpGroupBox}">
+                        <Border Background="Black" BorderBrush="#808080" BorderThickness="1">
+                            <Canvas x:Name="NetGraphCanvas" Background="Black"/>
+                        </Border>
+                    </GroupBox>
+
+                    <ListView x:Name="NetListView" Grid.Row="1" BorderBrush="#808080" Margin="0,4,0,0">
+                        <ListView.View>
+                            <GridView>
+                                <GridViewColumn Header="Adapter Name" Width="200" DisplayMemberBinding="{Binding AdapterName}"/>
+                                <GridViewColumn Header="Network Utilization" Width="120" DisplayMemberBinding="{Binding Utilization}"/>
+                                <GridViewColumn Header="Link Speed" Width="90" DisplayMemberBinding="{Binding LinkSpeed}"/>
+                            </GridView>
+                        </ListView.View>
+                    </ListView>
+                </Grid>
+            </TabItem>
+
+            <!-- TAB 5: USERS -->
+            <TabItem Header="Users">
+                <Grid Margin="4">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="35"/>
+                    </Grid.RowDefinitions>
+
+                    <ListView x:Name="UsersListView" Grid.Row="0" BorderBrush="#808080">
+                        <ListView.View>
+                            <GridView>
+                                <GridViewColumn Header="User" Width="160" DisplayMemberBinding="{Binding Username}"/>
+                                <GridViewColumn Header="ID" Width="50" DisplayMemberBinding="{Binding SessionId}"/>
+                                <GridViewColumn Header="Status" Width="100" DisplayMemberBinding="{Binding Status}"/>
+                                <GridViewColumn Header="Client Name" Width="100" DisplayMemberBinding="{Binding ClientName}"/>
+                            </GridView>
+                        </ListView.View>
+                    </ListView>
+
+                    <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                        <Button Content="Logoff" Click="UserLogoff_Click"/>
+                        <Button Content="Disconnect" Click="UserDisconnect_Click"/>
+                    </StackPanel>
+                </Grid>
+            </TabItem>
+        </TabControl>
+
+        <!-- STATUS BAR -->
+        <Border Grid.Row="2" Background="#D4D0C8" BorderBrush="#808080" BorderThickness="0,1,0,0">
+            <Grid Margin="4,2">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="100"/>
+                    <ColumnDefinition Width="110"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <TextBlock x:Name="StatusProcesses" Grid.Column="0" Text="Processes: 0" FontSize="11"/>
+                <TextBlock x:Name="StatusCpu" Grid.Column="1" Text="CPU Usage: 0%" FontSize="11"/>
+                <TextBlock x:Name="StatusCommit" Grid.Column="2" Text="Commit Charge: 0M / 0M" FontSize="11"/>
+            </Grid>
+        </Border>
+    </Grid>
+</Window>
